@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex">
+    <title>Card</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --page: #24101C;
+            --text: #F3E7D3;
+            --muted: #9C8070;
+            --gold: #E3A93C;
+            --disc: #140A10;
+            --groove: rgba(243, 231, 211, .07);
+            --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            --serif: "Fraunces", Georgia, "Times New Roman", serif;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme="dark"]) {
+                --page: #F3E7D3;
+                --text: #24101C;
+                --muted: #8A6E5C;
+                --groove: rgba(243, 231, 211, .09);
+            }
+        }
+
+        :root[data-theme="light"] {
+            --page: #F3E7D3;
+            --text: #24101C;
+            --muted: #8A6E5C;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            background: var(--page);
+            color: var(--text);
+            font-family: var(--sans);
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px);
+            text-align: center;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .code {
+            font-size: 13px;
+            letter-spacing: .12em;
+            color: var(--muted);
+            min-height: 18px
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 26px;
+            flex: 1;
+            justify-content: center;
+            width: 100%;
+            max-width: 420px
+        }
+
+        .disc {
+            width: min(66vw, 280px);
+            aspect-ratio: 1;
+            border: none;
+            background: none;
+            padding: 0;
+            cursor: pointer;
+            position: relative;
+            display: grid;
+            place-items: center;
+        }
+
+        .disc:focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 8px;
+            border-radius: 50%
+        }
+
+        .disc svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%
+        }
+
+        .spin {
+            transform-origin: 50% 50%
+        }
+
+        .disc[data-spinning="true"] .spin {
+            animation: rot 1.6s linear infinite
+        }
+
+        @keyframes rot {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .disc[data-spinning="true"] .spin {
+                animation: none
+            }
+        }
+
+        .face {
+            position: relative;
+            font-family: var(--serif);
+            color: var(--gold);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .face.num {
+            font-size: clamp(52px, 17vw, 78px);
+            font-weight: 600
+        }
+
+        .face.word {
+            font-size: clamp(15px, 4.4vw, 19px);
+            font-weight: 400;
+            letter-spacing: .02em
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 26ch;
+            min-height: 42px
+        }
+
+        .fallback {
+            display: none;
+            font-family: var(--serif);
+            font-size: 17px;
+            color: var(--page);
+            background: var(--gold);
+            padding: 13px 26px;
+            border-radius: 999px;
+            text-decoration: none;
+        }
+
+        .fallback.show {
+            display: inline-block
+        }
+
+        footer {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            color: var(--muted);
+            font-size: 13px;
+            min-height: 34px
+        }
+
+        footer span {
+            margin-right: 2px
+        }
+
+        .pill {
+            font: inherit;
+            color: var(--muted);
+            background: none;
+            border: 1px solid color-mix(in srgb, var(--muted) 45%, transparent);
+            border-radius: 999px;
+            padding: 5px 12px;
+            cursor: pointer;
+        }
+
+        .pill[aria-pressed="true"] {
+            color: var(--gold);
+            border-color: var(--gold)
+        }
+
+        .setup {
+            max-width: 34ch;
+            text-align: left;
+            line-height: 1.6;
+            font-size: 15px;
+            color: var(--text)
+        }
+
+        .setup h1 {
+            font-family: var(--serif);
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: var(--gold)
+        }
+
+        .setup p {
+            margin-bottom: 12px;
+            color: var(--muted)
+        }
+
+        .setup code {
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: 13px;
+            color: var(--text);
+            word-break: break-all
+        }
+
+        .hide {
+            display: none
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="code" id="code"></div>
+
+    <main>
+        <div id="stage">
+            <button class="disc" id="disc" aria-live="polite">
+                <svg viewBox="0 0 200 200" aria-hidden="true">
+                    <g class="spin">
+                        <circle cx="100" cy="100" r="99" fill="var(--disc)" />
+                        <circle cx="100" cy="100" r="88" fill="none" stroke="var(--groove)" stroke-width="1" />
+                        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--groove)" stroke-width="1" />
+                        <circle cx="100" cy="100" r="72" fill="none" stroke="var(--groove)" stroke-width="1" />
+                        <circle cx="100" cy="100" r="64" fill="none" stroke="var(--groove)" stroke-width="1" />
+                        <circle cx="100" cy="100" r="56" fill="none" stroke="var(--groove)" stroke-width="1" />
+                        <circle cx="100" cy="100" r="46" fill="none" stroke="var(--gold)" stroke-width="1.5"
+                            opacity=".8" />
+                        <circle cx="100" cy="100" r="5.5" fill="var(--page)" />
+                    </g>
+                </svg>
+                <span class="face word" id="face">Tap to play</span>
+            </button>
+            <a class="fallback" id="fallback" href="#" rel="noreferrer">Open in Spotify</a>
+        </div>
+        <p class="hint" id="hint">Tap, then put the phone face down before the music starts.</p>
+
+        <div class="setup hide" id="setup">
+            <h1>No card in this link</h1>
+            <p>Add a track to the address to make a card:</p>
+            <p><code id="example"></code></p>
+            <p>The 22-character code is the part of a Spotify track link that comes after <code>/track/</code>.</p>
+        </div>
+    </main>
+
+    <footer id="footer">
+        <span>Countdown</span>
+        <button class="pill" data-sec="0">Off</button>
+        <button class="pill" data-sec="3">3s</button>
+        <button class="pill" data-sec="5">5s</button>
+    </footer>
+
+    <script>
+        var CARDS = {
+        };
+
+        var ID_RE = /^[A-Za-z0-9]{22}$/;
+        var disc = document.getElementById('disc');
+        var face = document.getElementById('face');
+        var hint = document.getElementById('hint');
+        var codeEl = document.getElementById('code');
+        var fallback = document.getElementById('fallback');
+        var stage = document.getElementById('stage');
+        var setup = document.getElementById('setup');
+        var footer = document.getElementById('footer');
+
+        var params = new URLSearchParams(location.search);
+        var key = params.get('t') || params.get('c') || decodeURIComponent(location.hash.slice(1));
+        var trackId = null;
+
+        if (key) {
+            if (CARDS[key]) trackId = CARDS[key];
+            else if (ID_RE.test(key)) trackId = key;
+        }
+
+        var secs = 3;
+        try {
+            var saved = localStorage.getItem('hs_countdown');
+            if (saved !== null && !isNaN(parseInt(saved, 10))) secs = parseInt(saved, 10);
+        } catch (e) { }
+
+        function paintPills() {
+            var pills = footer.querySelectorAll('.pill');
+            for (var i = 0; i < pills.length; i++) {
+                pills[i].setAttribute('aria-pressed', String(parseInt(pills[i].dataset.sec, 10) === secs));
+            }
+        }
+        footer.addEventListener('click', function (e) {
+            var b = e.target.closest('.pill');
+            if (!b) return;
+            secs = parseInt(b.dataset.sec, 10);
+            try { localStorage.setItem('hs_countdown', String(secs)); } catch (err) { }
+            paintPills();
+        });
+        paintPills();
+
+        if (!key) {
+            stage.classList.add('hide');
+            hint.classList.add('hide');
+            footer.classList.add('hide');
+            setup.classList.remove('hide');
+            document.getElementById('example').textContent = location.origin + location.pathname + '?t=TRACKCODE';
+        } else if (!trackId) {
+            codeEl.textContent = key;
+            disc.disabled = true;
+            face.textContent = 'Not found';
+            hint.textContent = 'This card is not in the list yet. Add it and republish the page.';
+            footer.classList.add('hide');
+        } else {
+            codeEl.textContent = key;
+            disc.addEventListener('click', start, { once: true });
+        }
+
+        function start() {
+            disc.setAttribute('data-spinning', 'true');
+            hint.textContent = 'Phone face down.';
+            if (secs > 0) {
+                face.className = 'face num';
+                var left = secs;
+                face.textContent = String(left);
+                var tick = setInterval(function () {
+                    left--;
+                    if (left <= 0) { clearInterval(tick); launch(); }
+                    else face.textContent = String(left);
+                }, 1000);
+            } else {
+                launch();
+            }
+        }
+
+        function launch() {
+            face.className = 'face word';
+            face.textContent = 'Playing';
+            var web = 'https://open.spotify.com/track/' + trackId;
+            fallback.href = web;
+            var left = Date.now();
+            window.location.href = 'spotify:track:' + trackId;
+            setTimeout(function () {
+                if (document.hidden || Date.now() - left > 2600) return;
+                face.textContent = '';
+                disc.setAttribute('data-spinning', 'false');
+                stage.querySelector('.disc').classList.add('hide');
+                fallback.classList.add('show');
+                hint.textContent = 'Spotify did not open on its own.';
+            }, 1800);
+        }
+    </script>
+</body>
+
+</html>
