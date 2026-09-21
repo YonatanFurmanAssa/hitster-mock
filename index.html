@@ -104,6 +104,10 @@
   }
   .pill[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
 
+  .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .ctl{font:inherit;font-size:15px;color:var(--text);background:none;border:1px solid color-mix(in srgb, var(--muted) 55%, transparent);border-radius:999px;padding:9px 20px;cursor:pointer}
+  .ctl:disabled{opacity:.4;cursor:default}
+  .link{font:inherit;font-size:13px;color:var(--gold);background:none;border:none;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px}
   .setup{max-width:34ch;text-align:left;line-height:1.6;font-size:15px;color:var(--text)}
   .setup h1{font-family:var(--serif);font-size:24px;font-weight:600;margin-bottom:14px;color:var(--gold)}
   .setup p{margin-bottom:12px;color:var(--muted)}
@@ -134,14 +138,21 @@
     </button>
     <a class="fallback" id="fallback" href="#" rel="noreferrer">Open in Spotify</a>
   </div>
-  <p class="hint" id="hint">Tap, then put the phone face down before the music starts.</p>
+
+  <div class="controls hide" id="controls">
+    <button class="ctl" id="pause">Pause</button>
+    <button class="ctl" id="replay">From the start</button>
+  </div>
+
+  <p class="hint" id="hint"></p>
 
   <div class="setup hide" id="setup">
     <h1>No card in this link</h1>
-    <p>Add a track to the address to make a card:</p>
+    <p>Scan a card, or add a track to the address:</p>
     <p><code id="example"></code></p>
-    <p>The 22-character code is the part of a Spotify track link that comes after <code>/track/</code>.</p>
   </div>
+
+  <button class="link hide" id="connect">Hide the song name: connect Spotify</button>
 </main>
 
 <footer id="footer">
@@ -152,6 +163,9 @@
 </footer>
 
 <script>
+  // Paste your Spotify app's Client ID between the quotes to turn on hidden mode.
+  var CLIENT_ID = '';
+
   var CARDS = {
     "d80c": "05wIrZSwuaVWhcv5FfqeH0",  // 1985 Katrina & The Waves - Walking On Sunshine
     "613o": "07ji8gwXu6NRAJvcb500hx",  // 2023 BAANDIT! - rumination
@@ -362,63 +376,212 @@
   };
 
   var ID_RE = /^[A-Za-z0-9]{22}$/;
-  var disc = document.getElementById('disc');
-  var face = document.getElementById('face');
-  var hint = document.getElementById('hint');
-  var codeEl = document.getElementById('code');
-  var fallback = document.getElementById('fallback');
-  var stage = document.getElementById('stage');
-  var setup = document.getElementById('setup');
-  var footer = document.getElementById('footer');
+  var SCOPES = 'user-modify-playback-state user-read-playback-state';
+  var REDIRECT = location.origin + location.pathname;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var disc = $('disc'), face = $('face'), hint = $('hint'), codeEl = $('code');
+  var fallback = $('fallback'), stage = $('stage'), setup = $('setup'), footer = $('footer');
+  var controls = $('controls'), pauseBtn = $('pause'), replayBtn = $('replay'), connect = $('connect');
+
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function store(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
 
   var params = new URLSearchParams(location.search);
-  var key = params.get('t') || params.get('c') || decodeURIComponent(location.hash.slice(1));
+  var authCode = params.get('code'), authErr = params.get('error');
+  var key = (authCode || authErr) ? params.get('state') : (params.get('t') || params.get('c') || decodeURIComponent(location.hash.slice(1)));
   var trackId = null;
-
   if (key) {
     if (CARDS[key]) trackId = CARDS[key];
     else if (ID_RE.test(key)) trackId = key;
   }
 
-  var secs = 3;
-  try {
-    var saved = localStorage.getItem('hs_countdown');
-    if (saved !== null && !isNaN(parseInt(saved, 10))) secs = parseInt(saved, 10);
-  } catch (e) {}
+  /* ---------- Spotify login (PKCE, no server) ---------- */
 
+  function randomString(n) {
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var a = new Uint8Array(n); crypto.getRandomValues(a);
+    var s = ''; for (var i = 0; i < n; i++) s += chars[a[i] % chars.length];
+    return s;
+  }
+  function b64url(buf) {
+    var b = new Uint8Array(buf), s = '';
+    for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  async function login() {
+    var verifier = randomString(64);
+    store('hs_verifier', verifier);
+    var challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+    var q = new URLSearchParams({
+      response_type: 'code', client_id: CLIENT_ID, scope: SCOPES,
+      code_challenge_method: 'S256', code_challenge: challenge,
+      redirect_uri: REDIRECT, state: key || ''
+    });
+    location.href = 'https://accounts.spotify.com/authorize?' + q.toString();
+  }
+  async function tokenRequest(fields) {
+    var r = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(fields)
+    });
+    if (!r.ok) throw new Error('token');
+    var j = await r.json();
+    store('hs_access', j.access_token);
+    store('hs_expires', String(Date.now() + (j.expires_in - 60) * 1000));
+    if (j.refresh_token) store('hs_refresh', j.refresh_token);
+  }
+  function logout() { ['hs_access', 'hs_expires', 'hs_refresh'].forEach(function (k) { store(k, null); }); }
+  async function accessToken() {
+    var t = load('hs_access'), exp = parseInt(load('hs_expires') || '0', 10);
+    if (t && Date.now() < exp) return t;
+    var rt = load('hs_refresh');
+    if (!rt) return null;
+    try {
+      await tokenRequest({ grant_type: 'refresh_token', refresh_token: rt, client_id: CLIENT_ID });
+      return load('hs_access');
+    } catch (e) { logout(); return null; }
+  }
+
+  /* ---------- Spotify remote control ---------- */
+
+  async function call(method, path, body) {
+    var t = await accessToken();
+    if (!t) throw new Error('auth');
+    var opts = { method: method, headers: { Authorization: 'Bearer ' + t } };
+    if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    var r = await fetch('https://api.spotify.com/v1' + path, opts);
+    if (r.status === 401) { logout(); throw new Error('auth'); }
+    return r;
+  }
+  async function play(body, deviceId) {
+    var r = await call('PUT', '/me/player/play' + (deviceId ? '?device_id=' + deviceId : ''), body);
+    if (r.status === 404 && !deviceId) {
+      var d = await call('GET', '/me/player/devices');
+      var list = d.ok ? ((await d.json()).devices || []) : [];
+      var dev = list.filter(function (x) { return !x.is_restricted; })[0];
+      if (!dev) throw new Error('nodevice');
+      return play(body, dev.id);
+    }
+    if (r.status === 403) throw new Error('forbidden');
+    if (!r.ok) throw new Error('other');
+  }
+  var MESSAGES = {
+    auth: 'Spotify needs you to connect again.',
+    nodevice: 'Open the Spotify app, play anything for a second, then come back and tap again.',
+    forbidden: 'Spotify said no. This needs Premium, and your account has to be on the app\'s user list.',
+    other: 'Something went wrong. Tap to try again.'
+  };
+
+  /* ---------- screens ---------- */
+
+  var hidden = false, playing = false, busy = false;
+
+  var secs = 3;
+  var saved = load('hs_countdown');
+  if (saved !== null && !isNaN(parseInt(saved, 10))) secs = parseInt(saved, 10);
   function paintPills() {
     var pills = footer.querySelectorAll('.pill');
-    for (var i = 0; i < pills.length; i++) {
-      pills[i].setAttribute('aria-pressed', String(parseInt(pills[i].dataset.sec, 10) === secs));
-    }
+    for (var i = 0; i < pills.length; i++) pills[i].setAttribute('aria-pressed', String(parseInt(pills[i].dataset.sec, 10) === secs));
   }
   footer.addEventListener('click', function (e) {
     var b = e.target.closest('.pill');
     if (!b) return;
     secs = parseInt(b.dataset.sec, 10);
-    try { localStorage.setItem('hs_countdown', String(secs)); } catch (err) {}
+    store('hs_countdown', String(secs));
     paintPills();
   });
-  paintPills();
 
-  if (!key) {
-    stage.classList.add('hide');
-    hint.classList.add('hide');
-    footer.classList.add('hide');
-    setup.classList.remove('hide');
-    document.getElementById('example').textContent = location.origin + location.pathname + '?t=TRACKCODE';
-  } else if (!trackId) {
+  function render(note) {
+    hidden = !!(CLIENT_ID && load('hs_refresh'));
+    paintPills();
+    connect.classList.toggle('hide', !CLIENT_ID);
+    connect.textContent = hidden ? 'Hidden mode is on \u00b7 disconnect' : 'Hide the song name: connect Spotify';
+
+    if (!key) {
+      stage.classList.add('hide'); hint.classList.add('hide'); footer.classList.add('hide');
+      setup.classList.remove('hide');
+      $('example').textContent = REDIRECT + '?t=TRACKCODE';
+      if (note) { hint.textContent = note; hint.classList.remove('hide'); }
+      return;
+    }
     codeEl.textContent = key;
-    disc.disabled = true;
-    face.textContent = 'Not found';
-    hint.textContent = 'This card is not in the list yet. Add it and republish the page.';
-    footer.classList.add('hide');
-  } else {
-    codeEl.textContent = key;
-    disc.addEventListener('click', start, { once: true });
+    if (!trackId) {
+      disc.disabled = true;
+      face.textContent = 'Not found';
+      hint.textContent = 'This card is not in the list yet. Add it and redeploy the page.';
+      footer.classList.add('hide');
+      return;
+    }
+    footer.classList.toggle('hide', hidden);
+    hint.textContent = note || (hidden ? 'Tap to play. The song stays hidden.' : 'Tap, then put the phone face down before the music starts.');
   }
 
-  function start() {
+  connect.addEventListener('click', function () {
+    if (hidden) { logout(); render(); } else { login(); }
+  });
+
+  disc.addEventListener('click', function () {
+    if (busy || playing) return;
+    if (hidden) startHidden(); else startLink();
+  });
+
+  async function startHidden() {
+    busy = true;
+    face.className = 'face word'; face.textContent = 'Loading';
+    try {
+      await play({ uris: ['spotify:track:' + trackId] });
+      playing = true;
+      disc.setAttribute('data-spinning', 'true');
+      face.textContent = 'Listening';
+      hint.textContent = 'Guess the year, then flip the card.';
+      controls.classList.remove('hide');
+      pauseBtn.textContent = 'Pause';
+    } catch (e) {
+      face.textContent = 'Tap to play';
+      hint.textContent = MESSAGES[e.message] || MESSAGES.other;
+      if (e.message === 'auth') render(MESSAGES.auth);
+    }
+    busy = false;
+  }
+
+  pauseBtn.addEventListener('click', async function () {
+    pauseBtn.disabled = true;
+    try {
+      if (playing) {
+        await call('PUT', '/me/player/pause');
+        playing = false;
+        disc.setAttribute('data-spinning', 'false');
+        face.textContent = 'Paused';
+        pauseBtn.textContent = 'Resume';
+      } else {
+        await play();
+        playing = true;
+        disc.setAttribute('data-spinning', 'true');
+        face.textContent = 'Listening';
+        pauseBtn.textContent = 'Pause';
+      }
+    } catch (e) { hint.textContent = MESSAGES[e.message] || MESSAGES.other; }
+    pauseBtn.disabled = false;
+  });
+
+  replayBtn.addEventListener('click', async function () {
+    replayBtn.disabled = true;
+    try {
+      await play({ uris: ['spotify:track:' + trackId] });
+      playing = true;
+      disc.setAttribute('data-spinning', 'true');
+      face.textContent = 'Listening';
+      pauseBtn.textContent = 'Pause';
+    } catch (e) { hint.textContent = MESSAGES[e.message] || MESSAGES.other; }
+    replayBtn.disabled = false;
+  });
+
+  /* ---------- plain mode: countdown, then jump into Spotify ---------- */
+
+  function startLink() {
+    busy = true;
     disc.setAttribute('data-spinning', 'true');
     hint.textContent = 'Phone face down.';
     if (secs > 0) {
@@ -430,27 +593,44 @@
         if (left <= 0) { clearInterval(tick); launch(); }
         else face.textContent = String(left);
       }, 1000);
-    } else {
-      launch();
-    }
+    } else launch();
   }
-
   function launch() {
     face.className = 'face word';
     face.textContent = 'Playing';
-    var web = 'https://open.spotify.com/track/' + trackId;
-    fallback.href = web;
-    var left = Date.now();
+    fallback.href = 'https://open.spotify.com/track/' + trackId;
+    var t0 = Date.now();
     window.location.href = 'spotify:track:' + trackId;
     setTimeout(function () {
-      if (document.hidden || Date.now() - left > 2600) return;
-      face.textContent = '';
+      if (document.hidden || Date.now() - t0 > 2600) return;
       disc.setAttribute('data-spinning', 'false');
-      stage.querySelector('.disc').classList.add('hide');
+      disc.classList.add('hide');
       fallback.classList.add('show');
       hint.textContent = 'Spotify did not open on its own.';
     }, 1800);
   }
+
+  /* ---------- start ---------- */
+
+  (async function init() {
+    var note = '';
+    if (authCode || authErr) {
+      if (authCode) {
+        try {
+          await tokenRequest({
+            grant_type: 'authorization_code', code: authCode, redirect_uri: REDIRECT,
+            client_id: CLIENT_ID, code_verifier: load('hs_verifier') || ''
+          });
+          note = 'Connected. Songs will now play hidden.';
+        } catch (e) { note = 'Could not connect to Spotify. Try again.'; }
+      } else {
+        note = 'Spotify connection was cancelled.';
+      }
+      store('hs_verifier', null);
+      history.replaceState(null, '', REDIRECT + (key ? '?c=' + encodeURIComponent(key) : ''));
+    }
+    render(note);
+  })();
 </script>
 </body>
 </html>
