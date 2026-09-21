@@ -1,372 +1,456 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="robots" content="noindex">
-    <title>Card</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap"
-        rel="stylesheet">
-    <style>
-        :root {
-            --page: #24101C;
-            --text: #F3E7D3;
-            --muted: #9C8070;
-            --gold: #E3A93C;
-            --disc: #140A10;
-            --groove: rgba(243, 231, 211, .07);
-            --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            --serif: "Fraunces", Georgia, "Times New Roman", serif;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#24101C;
+    --text:#F3E7D3;
+    --muted:#9C8070;
+    --gold:#E3A93C;
+    --disc:#140A10;
+    --groove:rgba(243,231,211,.07);
+    --sans:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --page:#F3E7D3;
+      --text:#24101C;
+      --muted:#8A6E5C;
+      --groove:rgba(243,231,211,.09);
+    }
+  }
+  :root[data-theme="light"]{
+    --page:#F3E7D3;
+    --text:#24101C;
+    --muted:#8A6E5C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--page);
+    color:var(--text);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-between;
+    padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px);
+    text-align:center;
+    overscroll-behavior:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .code{font-size:13px;letter-spacing:.12em;color:var(--muted);min-height:18px}
+  main{display:flex;flex-direction:column;align-items:center;gap:26px;flex:1;justify-content:center;width:100%;max-width:420px}
 
-        @media (prefers-color-scheme: light) {
-            :root:not([data-theme="dark"]) {
-                --page: #F3E7D3;
-                --text: #24101C;
-                --muted: #8A6E5C;
-                --groove: rgba(243, 231, 211, .09);
-            }
-        }
+  .disc{
+    width:min(66vw,280px);
+    aspect-ratio:1;
+    border:none;
+    background:none;
+    padding:0;
+    cursor:pointer;
+    position:relative;
+    display:grid;
+    place-items:center;
+  }
+  .disc:focus-visible{outline:2px solid var(--gold);outline-offset:8px;border-radius:50%}
+  .disc svg{position:absolute;inset:0;width:100%;height:100%}
+  .spin{transform-origin:50% 50%}
+  .disc[data-spinning="true"] .spin{animation:rot 1.6s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){.disc[data-spinning="true"] .spin{animation:none}}
 
-        :root[data-theme="light"] {
-            --page: #F3E7D3;
-            --text: #24101C;
-            --muted: #8A6E5C;
-        }
+  .face{
+    position:relative;
+    font-family:var(--serif);
+    color:var(--gold);
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+    pointer-events:none;
+  }
+  .face.num{font-size:clamp(52px,17vw,78px);font-weight:600}
+  .face.word{font-size:clamp(15px,4.4vw,19px);font-weight:400;letter-spacing:.02em}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0
-        }
+  .hint{color:var(--muted);font-size:14px;line-height:1.5;max-width:26ch;min-height:42px}
 
-        html,
-        body {
-            height: 100%
-        }
+  .fallback{
+    display:none;
+    font-family:var(--serif);
+    font-size:17px;
+    color:var(--page);
+    background:var(--gold);
+    padding:13px 26px;
+    border-radius:999px;
+    text-decoration:none;
+  }
+  .fallback.show{display:inline-block}
 
-        body {
-            background: var(--page);
-            color: var(--text);
-            font-family: var(--sans);
-            -webkit-font-smoothing: antialiased;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px);
-            text-align: center;
-            overscroll-behavior: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+  footer{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;min-height:34px}
+  footer span{margin-right:2px}
+  .pill{
+    font:inherit;color:var(--muted);
+    background:none;
+    border:1px solid color-mix(in srgb, var(--muted) 45%, transparent);
+    border-radius:999px;padding:5px 12px;cursor:pointer;
+  }
+  .pill[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
 
-        .code {
-            font-size: 13px;
-            letter-spacing: .12em;
-            color: var(--muted);
-            min-height: 18px
-        }
-
-        main {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 26px;
-            flex: 1;
-            justify-content: center;
-            width: 100%;
-            max-width: 420px
-        }
-
-        .disc {
-            width: min(66vw, 280px);
-            aspect-ratio: 1;
-            border: none;
-            background: none;
-            padding: 0;
-            cursor: pointer;
-            position: relative;
-            display: grid;
-            place-items: center;
-        }
-
-        .disc:focus-visible {
-            outline: 2px solid var(--gold);
-            outline-offset: 8px;
-            border-radius: 50%
-        }
-
-        .disc svg {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%
-        }
-
-        .spin {
-            transform-origin: 50% 50%
-        }
-
-        .disc[data-spinning="true"] .spin {
-            animation: rot 1.6s linear infinite
-        }
-
-        @keyframes rot {
-            to {
-                transform: rotate(360deg)
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .disc[data-spinning="true"] .spin {
-                animation: none
-            }
-        }
-
-        .face {
-            position: relative;
-            font-family: var(--serif);
-            color: var(--gold);
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
-            pointer-events: none;
-        }
-
-        .face.num {
-            font-size: clamp(52px, 17vw, 78px);
-            font-weight: 600
-        }
-
-        .face.word {
-            font-size: clamp(15px, 4.4vw, 19px);
-            font-weight: 400;
-            letter-spacing: .02em
-        }
-
-        .hint {
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.5;
-            max-width: 26ch;
-            min-height: 42px
-        }
-
-        .fallback {
-            display: none;
-            font-family: var(--serif);
-            font-size: 17px;
-            color: var(--page);
-            background: var(--gold);
-            padding: 13px 26px;
-            border-radius: 999px;
-            text-decoration: none;
-        }
-
-        .fallback.show {
-            display: inline-block
-        }
-
-        footer {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            color: var(--muted);
-            font-size: 13px;
-            min-height: 34px
-        }
-
-        footer span {
-            margin-right: 2px
-        }
-
-        .pill {
-            font: inherit;
-            color: var(--muted);
-            background: none;
-            border: 1px solid color-mix(in srgb, var(--muted) 45%, transparent);
-            border-radius: 999px;
-            padding: 5px 12px;
-            cursor: pointer;
-        }
-
-        .pill[aria-pressed="true"] {
-            color: var(--gold);
-            border-color: var(--gold)
-        }
-
-        .setup {
-            max-width: 34ch;
-            text-align: left;
-            line-height: 1.6;
-            font-size: 15px;
-            color: var(--text)
-        }
-
-        .setup h1 {
-            font-family: var(--serif);
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 14px;
-            color: var(--gold)
-        }
-
-        .setup p {
-            margin-bottom: 12px;
-            color: var(--muted)
-        }
-
-        .setup code {
-            font-family: ui-monospace, Menlo, monospace;
-            font-size: 13px;
-            color: var(--text);
-            word-break: break-all
-        }
-
-        .hide {
-            display: none
-        }
-    </style>
+  .setup{max-width:34ch;text-align:left;line-height:1.6;font-size:15px;color:var(--text)}
+  .setup h1{font-family:var(--serif);font-size:24px;font-weight:600;margin-bottom:14px;color:var(--gold)}
+  .setup p{margin-bottom:12px;color:var(--muted)}
+  .setup code{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--text);word-break:break-all}
+  .hide{display:none}
+</style>
 </head>
-
 <body>
 
-    <div class="code" id="code"></div>
+<div class="code" id="code"></div>
 
-    <main>
-        <div id="stage">
-            <button class="disc" id="disc" aria-live="polite">
-                <svg viewBox="0 0 200 200" aria-hidden="true">
-                    <g class="spin">
-                        <circle cx="100" cy="100" r="99" fill="var(--disc)" />
-                        <circle cx="100" cy="100" r="88" fill="none" stroke="var(--groove)" stroke-width="1" />
-                        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--groove)" stroke-width="1" />
-                        <circle cx="100" cy="100" r="72" fill="none" stroke="var(--groove)" stroke-width="1" />
-                        <circle cx="100" cy="100" r="64" fill="none" stroke="var(--groove)" stroke-width="1" />
-                        <circle cx="100" cy="100" r="56" fill="none" stroke="var(--groove)" stroke-width="1" />
-                        <circle cx="100" cy="100" r="46" fill="none" stroke="var(--gold)" stroke-width="1.5"
-                            opacity=".8" />
-                        <circle cx="100" cy="100" r="5.5" fill="var(--page)" />
-                    </g>
-                </svg>
-                <span class="face word" id="face">Tap to play</span>
-            </button>
-            <a class="fallback" id="fallback" href="#" rel="noreferrer">Open in Spotify</a>
-        </div>
-        <p class="hint" id="hint">Tap, then put the phone face down before the music starts.</p>
+<main>
+  <div id="stage">
+    <button class="disc" id="disc" aria-live="polite">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <g class="spin">
+          <circle cx="100" cy="100" r="99" fill="var(--disc)"/>
+          <circle cx="100" cy="100" r="88" fill="none" stroke="var(--groove)" stroke-width="1"/>
+          <circle cx="100" cy="100" r="80" fill="none" stroke="var(--groove)" stroke-width="1"/>
+          <circle cx="100" cy="100" r="72" fill="none" stroke="var(--groove)" stroke-width="1"/>
+          <circle cx="100" cy="100" r="64" fill="none" stroke="var(--groove)" stroke-width="1"/>
+          <circle cx="100" cy="100" r="56" fill="none" stroke="var(--groove)" stroke-width="1"/>
+          <circle cx="100" cy="100" r="46" fill="none" stroke="var(--gold)" stroke-width="1.5" opacity=".8"/>
+          <circle cx="100" cy="100" r="5.5" fill="var(--page)"/>
+        </g>
+      </svg>
+      <span class="face word" id="face">Tap to play</span>
+    </button>
+    <a class="fallback" id="fallback" href="#" rel="noreferrer">Open in Spotify</a>
+  </div>
+  <p class="hint" id="hint">Tap, then put the phone face down before the music starts.</p>
 
-        <div class="setup hide" id="setup">
-            <h1>No card in this link</h1>
-            <p>Add a track to the address to make a card:</p>
-            <p><code id="example"></code></p>
-            <p>The 22-character code is the part of a Spotify track link that comes after <code>/track/</code>.</p>
-        </div>
-    </main>
+  <div class="setup hide" id="setup">
+    <h1>No card in this link</h1>
+    <p>Add a track to the address to make a card:</p>
+    <p><code id="example"></code></p>
+    <p>The 22-character code is the part of a Spotify track link that comes after <code>/track/</code>.</p>
+  </div>
+</main>
 
-    <footer id="footer">
-        <span>Countdown</span>
-        <button class="pill" data-sec="0">Off</button>
-        <button class="pill" data-sec="3">3s</button>
-        <button class="pill" data-sec="5">5s</button>
-    </footer>
+<footer id="footer">
+  <span>Countdown</span>
+  <button class="pill" data-sec="0">Off</button>
+  <button class="pill" data-sec="3">3s</button>
+  <button class="pill" data-sec="5">5s</button>
+</footer>
 
-    <script>
-        var CARDS = {
-        };
+<script>
+  var CARDS = {
+    "d80c": "05wIrZSwuaVWhcv5FfqeH0",  // 1985 Katrina & The Waves - Walking On Sunshine
+    "613o": "07ji8gwXu6NRAJvcb500hx",  // 2023 BAANDIT! - rumination
+    "3ba8": "08MFgEQeVLF37EyZ7jcwLc",  // 2021 Zack Tabudlo - Pano
+    "wzk9": "0F845nujLVqCb0XMZCh5Pc",  // 1956 Chet Baker - I Fall In Love Too Easily
+    "2ai0": "0JIMT9gzLIIz0esKLyjbKf",  // 2018 Vacations - Telephones
+    "7lox": "0JyCyKN7bG2z4EHN09nciG",  // 1972 Looking Glass - Brandy (You're a Fine Girl)
+    "uj24": "0K3JEezCKy5n8yMNNhhkAK",  // 2026 2KE - Verão na Praia
+    "5uz2": "0KZodeWxqxd88F9wY1cqgs",  // 1970 George Harrison - My Sweet Lord
+    "cesn": "0R3TWpoxAhT3HDXM7tpRzS",  // 2019 Crumb - Ghostride
+    "sz6p": "0TZejo18HlJ86OrWNsXKnw",  // 2019 Strawberry Guy - Mrs Magic
+    "b8t6": "0WVTQp3SOCuMr08jh1jweV",  // 1962 Sam Cooke - Bring It On Home to Me
+    "ujr2": "0b3Bkp0UfCkNqquAUmoP5m",  // 2026 Quevedo, Elvis Crespo - LA GRACIOSA
+    "occ8": "0bRXwKfigvpKZUurwqAlEh",  // 1977 Bill Withers - Lovely Day
+    "35t4": "0bSlaaneF4lLymoMouvxfH",  // 2026 הכוכב הבא, Noam Bettan - לילות וקללות
+    "vrzy": "0c82YIGpQ5dCaXpTNCk4sb",  // 2024 Tiago PZK, Anitta, Emilia - Alegría
+    "yb8c": "0eaVIYo2zeOaGJeqZ5TwYz",  // 2023 Don Toliver - No Pole
+    "1foo": "0jvN7eQJJt4nxQzgQfZ1SP",  // 1969 Norman Greenbaum - Spirit In The Sky
+    "15y0": "0oZ7A6boTf58DylieufdbB",  // 2020 Sam Shore, Matt Bloyd - Could Have Been Stardust
+    "0zk8": "0ofHAoxe9vBkTCp2UQIavz",  // 1977 Fleetwood Mac - Dreams
+    "4d8q": "0pNeVovbiZHkulpGeOx1Gj",  // 1969 The Beatles - Something
+    "mlgc": "0pQskrTITgmCMyr85tb9qq",  // 1972 David Bowie - Starman
+    "muvo": "0sTlGEld0h8kIPZaKDYUf4",  // 2021 The Rare Occasions - Notion
+    "wwh4": "0tbSkXQ6M8RjxVpAYuSSCv",  // 2026 fennecxx, Mc Gw - BOSSINHA
+    "y8xp": "11uvudmvZBzG2ztQsOB5sF",  // 2016 Warriyo - Mortals
+    "4808": "129lYDVKnWtlJc2PZJviuA",  // 2002 Juanes - A Dios Le Pido
+    "c35s": "15T2Fk5WwgAxszxyHD7gJV",  // 1979 Julio Iglesias - Spanish Girl
+    "cis4": "165n9dxHacuguzneup0HXQ",  // 1958 Perry Como - Magic Moments
+    "evb8": "1KIJclzEbNhSVw8tiHPWwE",  // 2016 Vacations - Young
+    "ceb0": "1NpD7cQH8hGMZrufOQQ0Xk",  // 2008 João Bosco & Vinícius - Chora, Me Liga
+    "1tgc": "1PtQJZVZIdWIYdARpZRDFO",  // 1985 Kate Bush - Running Up That Hill
+    "kht4": "1WN4uNclrDuczTO3bCr8s1",  // 1963 The Ronettes - Be My Baby
+    "7b0g": "1WNUQX6cE33be6WS2P0IvP",  // 2024 Alej - Dreaming of the Stars
+    "di4w": "1fidCEsYlaVE3pHwKCvpFZ",  // 2014 Nico & Vinz - Am I Wrong
+    "j0dk": "1iPlvNB8uJyKrUfTDaeku4",  // 2024 Jamy Nox - Pasarla
+    "glyt": "1qDrWA6lyx8cLECdZE7TV7",  // 2011 Gotye, Kimbra - Somebody That I Used To Know
+    "bucm": "1ri9xlwv99u8jL1RZVjs1R",  // 1994 Frente! - Bizarre Love Triangle
+    "q73b": "1uKjQoh8JZj9ryuYRhpd7E",  // 1987 Luis Miguel - Ahora Te Puedes Marchar
+    "0n8k": "1udKn1oNKYQSQ9OmiIWCMu",  // 1965 The Lovin' Spoonful - Do You Believe in Magic?
+    "laqx": "1ujQMBVu8XReq7KCRBJVE4",  // 2025 הכוכב הבא, Gal De Paz - Cryin’
+    "3vaw": "1wgqttlPacpvmX5DKVboOa",  // 2007 M.I.A. - Paper Planes
+    "gnj0": "1zFbBrZmJr1Z49HYe84dBg",  // 2018 Her's - Harvey
+    "bo8k": "26XaOsDMbl0e1cVKYfkz6w",  // 2018 Trevor Daniel - Falling
+    "cbi8": "2AT8iROs4FQueDv2c8q2KE",  // 2013 Arctic Monkeys - R U Mine?
+    "81yc": "2FRnf9qhLbvw8fu4IBXx78",  // 1984 Wham! - Last Christmas
+    "gp8g": "2GYHyAoLWpkxLVa4oYTVko",  // 2010 Stromae - Alors on danse
+    "8pic": "2JigRzQ3AWCd4BSJoAI0vR",  // 1967 The Beatles - Baby You're A Rich Man
+    "s9rk": "2LKOHdMsL0K9KwcPRlJK2v",  // 2014 Mr.Kitty - After Dark
+    "0x8o": "2N3U8uTYhjX2KwGT0pf5x0",  // 2015 A$AP Rocky, Rod Stewart, Miguel, Mark Ronson - Everyday
+    "lma4": "2PWTZV5znjLtZC5T1EVJvL",  // 2022 JVKE - this is what falling in love feels like
+    "6xcc": "2RlgNHKcydI9sayD2Df2xp",  // 1977 Electric Light Orchestra - Mr. Blue Sky
+    "dxuz": "2Xb6wJYGi0QXwURw5WWvI5",  // 1978 Gerry Rafferty - Right Down the Line
+    "fbew": "2YiCMmONQcoMPX2bV1LxE0",  // 1985 Tears For Fears - Everybody Wants To Rule The World
+    "qwt8": "2Z8WuEywRWYTKe1NybPQEW",  // 2015 Twenty One Pilots - Ride
+    "5bco": "2enPRFda84VE2wtI8c86Uf",  // 2013 Cults - Always Forever
+    "hkbo": "2grjqo0Frpf2okIBiifQKs",  // 1978 Earth, Wind & Fire - September
+    "fx9k": "2jMgv2F3fWC8FKRueqia6z",  // 1977 Efraim Shamir - ערב של יום בהיר
+    "rtie": "2kkvB3RNRzwjFdGhaUA0tz",  // 1970 Derek & The Dominos - Layla
+    "irq8": "2mkI1YIvOQDYiW76JBUkeF",  // 2025 שיר אברני - הפסדתם שוב
+    "y5cg": "2mlsK27VNUj8y08BvtIbXu",  // 2020 Jovem Dionisio - Pontos de Exclamação
+    "jhv4": "2plbrEY59IikOBgBGLjaoe",  // 2024 Lady Gaga, Bruno Mars - Die With A Smile
+    "7vs8": "2qJbpu9aqtqSSUZ64n4268",  // 2026 UdieNnx - Asteria
+    "i3j2": "2sIbHjfJ3nbMXNz4w03fWv",  // 1982 The Alan Parsons Project - Eye In The Sky
+    "4vbk": "2sKOQCn7Owq2kFQWfl5tCV",  // 2023 BAANDIT! - Whispered reverie
+    "xqdp": "2saHrb2XITEyOmjVfq4EPn",  // 2025 Kapelyo - ליפול ולקום
+    "fc1w": "2vWBUC9djv6BtiGlmKiQaH",  // 2019 Yot Club - YKWIM?
+    "mkuo": "2wBnZdVWa5jVpvYRfGU7rP",  // 2019 Ghost - Mary On A Cross
+    "ek9o": "2yd5ZA1q3w6jdE03eVrGHU",  // 2011 Michel Teló - Ai Se Eu Te Pego
+    "tok8": "2zPANzQTt5Nbkg0eBPb7HI",  // 1956 Chet Baker - There Will Never Be Another You
+    "ac8m": "31A3oqQxDLdG9HRx45z62d",  // 1964 Dusty Springfield - I Only Want To Be With You
+    "lj6g": "34WI9hCaE3AzbOYT9wFXLP",  // 2016 Empire Of The Sun - High And Low
+    "q8q4": "37G7NBSwMiZfi3Swzgh4rW",  // 2024 beabadoobee - Girl Song
+    "ixwm": "38iKuyifRL4mQ36F2hIxmF",  // 1987 Fleetwood Mac - Everywhere
+    "dv0o": "3Am0IbOxmvlSXro7N5iSfZ",  // 1967 The Beatles - Strawberry Fields Forever
+    "22vo": "3CRDbSIZ4r5MsZ0YwxuEkn",  // 2015 Twenty One Pilots - Stressed Out
+    "jovo": "3EaJDYHA0KnX88JvDhL9oa",  // 2017 Steve Lacy - Dark Red
+    "kv2w": "3G7tRC24Uh09Hmp1KZ7LQ2",  // 1966 The Monkees - I'm a Believer
+    "phz0": "3QxKpdTB8ZSFn8MGeCCpsQ",  // 1993 Aerosmith - Crazy
+    "h7l0": "3RnaEjqlmhWxj9cdNMo8lT",  // 2023 mikeeysmind - After Dark x Sweater Weather
+    "rvz8": "3TlIt0ReIxPsVZcOEivT5U",  // 1965 Tom Jones - It's Not Unusual
+    "bhec": "3USxtqRwSYz57Ewm6wWRMp",  // 2020 Glass Animals - Heat Waves
+    "c2pa": "3VCXx37jNGNOMns6z2OnvJ",  // 2012 Harmless - Swing Lynn
+    "klxk": "3be9ACTxtcL6Zm4vJRUiPG",  // 2024 yung kai - blue
+    "llll": "3cfOd4CMv2snFaKAnMdnvK",  // 1999 Smash Mouth - All Star
+    "ts44": "3gd189LrWml7YIpS4YeCZi",  // 2021 DeeKay, lilbubblegum, Letoa - Ksubi Jeans!
+    "yaq4": "3hxIUxnT27p5WcmjGUXNwx",  // 2020 Hotel Ugly - Shut up My Moms Calling
+    "6bks": "3iIrsQt3hhyWKLU0M9y4oS",  // 2025 Aestus - EU TAVA AQUI PENSADO
+    "jtf2": "3jfZ9M23l0L7RxzYMTgBTv",  // 2016 Joy Again - Looking Out for You
+    "ftk6": "3lOok0REf4j3790abX26PR",  // 2014 Chaos Chaos - Do You Feel It?
+    "vpxc": "3qhlB30KknSejmIvZZLjOD",  // 2022 Djo - End of Beginning
+    "qg2f": "3tGOE3EJEzf66mruOpnQay",  // 1972 Arik Einstein - כמה טוב שבאת הביתה
+    "hncg": "3uQYhu911HYswgFBwNvb1A",  // 2023 John Runefelt, Easton - You've Got It
+    "bq9w": "3wXY1YNt7JbhgdYEqYS7bk",  // 2018 SHIGEO SEKITO - The Word 2
+    "qsn8": "3zEN0ii6s4DHHBpnTp3RP7",  // 2008 Empire Of The Sun - We Are The People
+    "4vf6": "40riOy7x9W7GXjyGp4pjAv",  // 1976 Eagles - Hotel California
+    "dxcy": "41TZ7YP0hzQLnZ3pL0x7uz",  // 2022 Luedji Luna, Maz, Dawn Patrol - Banho de Folhas
+    "lyqc": "43iIQbw5hx986dUEZbr3eN",  // 2023 Laufey - From The Start
+    "heb0": "44AyOl4qVkzS48vBsbNXaC",  // 1961 Elvis Presley - Can't Help Falling in Love
+    "6rfk": "48i055G1OT5KxGGftwFxWy",  // 1964 Roy Orbison - Oh, Pretty Woman
+    "z5h8": "49X0LAl6faAusYq02PRAY6",  // 2000 Modjo - Lady - Hear Me Tonight
+    "b9f8": "4I77FZbsed188zTLXXXWfQ",  // 2016 Mild High Club - Skiptracing
+    "5wk9": "4Ol0QVL2TODzuN1WJYNuSk",  // 2020 Hisohkah, Chance Thrash - Bike Ride
+    "nra9": "4dyx5SzxPPaD8xQIid5Wjj",  // 2006 Peter Bjorn and John - Young Folks
+    "hcy8": "4h9wh7iOZ0GGn8QVp4RAOB",  // 2022 OneRepublic - I Ain't Worried
+    "zurk": "4iJyoBOLtHqaGxP12qzhQI",  // 2021 Justin Bieber, Daniel Caesar, GIVĒON - Peaches
+    "x9d4": "4k6Uh1HXdhtusDW5y8Gbvy",  // 2022 Steve Lacy - Bad Habit
+    "vp0w": "4kP69y3GKHi9tXckfgp4bK",  // 1968 Stevie Wonder - For Once In My Life
+    "irvo": "4pTkDIlpFNoeWbahu8pVXW",  // 2022 Izzamuzzic, Julien Marchal - Shootout
+    "z8qc": "4wmdb0bvf7mXL4Gn4KP0MA",  // 2024 IcyBeast - 7 Weeks & 3 Days
+    "g7fg": "51Grh1RyUDcMBbpuyUIUHI",  // 2019 Liana Flores - rises the moon
+    "1254": "52ojopYMUzeNcudsoz7O9D",  // 2015 Tame Impala - New Person, Same Old Mistakes
+    "t8u4": "54eZmuggBFJbV7k248bTTt",  // 1972 America, George Martin - A Horse with No Name
+    "dc9n": "5EJA7Rwkeuvm98CZg0XXNO",  // 2019 Strawberry Guy - What Would I Do?
+    "pc00": "5EXvoNLqFsbx0tf3dBQTUa",  // 2025 שיר אברני - עד ש
+    "b4vc": "5FVd6KXrgO9B3JPmC8OPst",  // 2013 Arctic Monkeys - Do I Wanna Know?
+    "jamg": "5HCyWlXZPP0y6Gqq8TgA20",  // 2021 The Kid LAROI, Justin Bieber - STAY
+    "zoas": "5HhqFzZiSOmd5S90LlCikL",  // 2024 BAANDIT! - Miss.mp3
+    "3iz8": "5IMtdHjJ1OtkxbGe4zfUxQ",  // 1979 Rupert Holmes - Escape (The Pina Colada Song)
+    "zfdk": "5JVbvCHX10U2pLa5DEqGav",  // 2013 Capital Cities - Safe and Sound
+    "w0a0": "5QO79kh1waicV47BqGRL3g",  // 2020 The Weeknd - Save Your Tears
+    "yedk": "5QwJtoSfJqEPHlNCm46uex",  // 2025 unfazed - A Gira
+    "pspw": "5URfZHMlUWTWxPvvSBWcPk",  // 1980 John Lennon - Beautiful Boy (Darling Boy)
+    "1w4j": "5UqCQaDshqbIk3pkhy4Pjg",  // 2011 Avicii - Levels
+    "ipjd": "5VbwM8nvvQLXcwsZUwgm9K",  // 1954 The Chordettes - Mr. Sandman
+    "jb7c": "5WDLRQ3VCdVrKw0njWe5E5",  // 1984 George Michael - Careless Whisper
+    "2o9y": "5XeFesFbtLpXzIVDNQP22n",  // 2013 Arctic Monkeys - I Wanna Be Yours
+    "85d0": "5YF8uBmCTW4HXsI13tsQAO",  // 2023 Odetari, 9lives - I LOVE YOU HOE
+    "37fs": "5dUMh0ugelpKfoFp3qChuK",  // 1961 Ray Charles - Hit the Road Jack
+    "0lts": "5e0b9LgOfi3aJSKXFcOWRe",  // 2023 Chezile - Beanie
+    "4m40": "5e9TFTbltYBg2xThimr0rU",  // 1977 Fleetwood Mac - The Chain
+    "0ico": "5fBBJ7oZjz9ruMwx4b19hA",  // 2017 Sam Shore - Flavor of the Day
+    "5wsg": "5fCqHoueAR1Q790mPKj1HR",  // 2021 Strawberry Guy - Sun Outside My Window
+    "1xyk": "5fdNHVZHbWB1AaXk4RBGVD",  // 1980 Grover Washington, Jr., Bill Withers - Just the Two of Us
+    "o3ns": "5hM5arv9KDbCHS0k9uqwjr",  // 2020 Tame Impala - Borderline
+    "ubmy": "5hslUAKq9I9CG2bAulFkHN",  // 1963 Andy Williams - It's the Most Wonderful Time of the Year
+    "opr0": "5jr6pG3khBcBXZRm8NogSe",  // 2010 Breakbot, Irfane - Baby I'm Yours
+    "ewxc": "5odlY52u43F5BjByhxg7wg",  // 2022 JVKE - golden hour
+    "auiz": "5poS8LyxohSACjuIZ61EyS",  // 2018 Molina, Late Verlane - Hey Kids
+    "rhz8": "5r5cp9IpziiIsR6b93vcnQ",  // 2008 Empire Of The Sun - Walking On A Dream
+    "bsdq": "5rAxhWcgFng3s570sGO2F8",  // 2000 Linkin Park - A Place for My Head
+    "0uqo": "5rc7178sa2YRDlBFBHY0e8",  // 2023 Nafeesisboujee - Stephanie
+    "9igb": "5toKOQ86ydhA5UJ8DfENzy",  // 2021 VANO 3000, BADBADNOTGOOD, Samuel T. Herring - Running Away
+    "384s": "5xzdDMhFYiuUONB0Mha9VS",  // 1962 Little Eva - The Locomotion
+    "iun4": "5z4AYfi1d5m2zZIgaWhiki",  // 2023 mikeeysmind - Ethereal
+    "xbo0": "60a0Rd6pjrkxjPbaKzXjfq",  // 2000 Linkin Park - In the End
+    "kpd0": "60jQTAr2OkFcV4SWSRz3st",  // 1961 Brenda Lee - Emotions
+    "x3u8": "60l24WzU5XZabEfSShOIjJ",  // 1977 Efraim Shamir - נכון את יפה
+    "93a8": "62KZRwymXq9Rgm8Cm5UCfx",  // 1967 Frank Sinatra - The World We Knew (Over And Over)
+    "nxtf": "62zFcDLa1CjCY9yp6VO4ga",  // 2016 Men I Trust - Lauren
+    "nlpo": "63SevszngYpZOwf63o61K4",  // 2017 Dennis Lloyd - Nevermind
+    "lzog": "648BMGrt98kUbLo24A4vgj",  // 1986 Huey Lewis & The News - Hip To Be Square
+    "6p6c": "648TTtYB0bH0P8Hfy0FmkL",  // 1951 Nat King Cole - Unforgettable
+    "zqqk": "68EkhVWIeULhHxcbi1QhzK",  // 2021 AJR - World's Smallest Violin
+    "5agm": "68yErJ4REGuHTHvteDnIZf",  // 2026 $hXTGUN!, Sxilwix - HAYATI
+    "9aaw": "68zSzKkU28AfZvr5FkAUWT",  // 1997 Luis Miguel - Sabor a Mi
+    "y1qc": "6Ac4NVYYl2U73QiTt11ZKd",  // 1974 Blue Swede, Björn Skifs - Hooked On A Feeling
+    "cl8w": "6EOKwO6WaLal58MSsi6U4W",  // 1966 The Beatles - Eleanor Rigby
+    "beuo": "6FfLg6FFqhCsrFOaHIGkg0",  // 2020 JAWNY - Honeypie
+    "bvic": "6IIqWBHaHYbC8E16FrxLuX",  // 1954 The Chords - Sh-Boom
+    "4a0s": "6JIC3hbC28JZKZ8AlAqX8h",  // 2021 Elton John, Dua Lipa, PNAU - Cold Heart
+    "y77s": "6K4t31amVTZDgR3sKmwUJJ",  // 2015 Tame Impala - The Less I Know The Better
+    "ub64": "6KEb17S00Inf0v1qYDgUAj",  // 2021 Duki, Bizarrap - Malbec
+    "mt7s": "6NHAz8a9j2yZkP2TP48yLK",  // 2025 Mari Froes - Figa De Guiné
+    "u62g": "6PkxSIt2TYLMFa8ybyngVP",  // 2023 Hozier - Eat Your Young
+    "pxqg": "6QFCMUUq1T2Vf5sFUXcuQ7",  // 2012 Justin Bieber, Nicki Minaj - Beauty And A Beat
+    "6ong": "6QgjcU0zLnzq5OrUoSZ3OK",  // 2017 Portugal. The Man - Feel It Still
+    "nl3g": "6TxNV6BDYtpcw2LWADvHL8",  // 1960 Sam Cooke - Wonderful World
+    "rbeb": "6VWh3blVfTu8PlZCrLuURk",  // 1969 Arik Einstein - אחינועם לא יודעת
+    "wa90": "6WHSNH8PhDHbpYxg4I181o",  // 2022 Nicky Youre, hey daisy - Sunroof
+    "94xc": "6YDDrg8llsRtAgLlIROzZc",  // 1959 Paul Anka - Put Your Head On My Shoulder
+    "buf8": "6bmFicZxvhWn3wYScYhKfy",  // 1975 Oshik Levy - יונתן סע הביתה
+    "s8r4": "6dGnYIeXmHdcikdzNNDMm2",  // 1969 The Beatles - Here Comes The Sun
+    "7vq4": "6fL9cN0b15L0RHDMjYR1Ni",  // 1969 Arik Einstein - כשאת בוכה את לא יפה
+    "geci": "6g2BiiVQqY5v1S4HIrM54F",  // 2018 Rodrigo Amarante - Tuyo
+    "3xi8": "6jgkEbmQ2F2onEqsEhiliL",  // 2012 Mac DeMarco - My Kind of Woman
+    "d4zs": "6pwhPuPd4JEv4XeJDUpxBt",  // 1966 The Mamas & The Papas - California Dreamin'
+    "lrug": "6r20M5DWYdIoCDmDViBxuz",  // 1989 Roy Orbison - You Got It
+    "6ajx": "6tMdpUXfT70TD6Eh3XfB1p",  // 2017 The Living Tombstone - My Ordinary Life
+    "567b": "6tNQ70jh4OwmPGpYy6R2o9",  // 2024 Benson Boone - Beautiful Things
+    "2bpk": "6xqJ0XqDM9dVEW1jbm78wB",  // 2012 The Living Tombstone, Eurobeat Brony - Discord
+    "57cw": "6y6jPBeHuoeIZYGCUOdLAa",  // 2025 DJ Raulipues, DJ IGEEKS - Montagem Aurora Ozzonica
+    "kpug": "75IQVo8hqI1iwVZyvkN2VT",  // 2018 Men I Trust - Show Me How
+    "e8vw": "77MHOLfTVDlhcX0yDr23Uu",  // 1956 Patience & Prudence - Tonight You Belong To Me
+    "31c0": "7DD7eSuYSC5xk2ArU62esN",  // 1965 The Beatles - Help!
+    "lk0s": "7DcJ6fEBb7BaKuYKTwiDxK",  // 2016 Mild High Club - Homage
+    "6534": "7EAMXbLcL0qXmciM5SwMh2",  // 2019 Mac DeMarco - Heart To Heart
+    "9954": "7EkWXAI1wn8Ii883ecd9xr",  // 2021 Surf Curse - Freaks
+    "ajj0": "7FXj7Qg3YorUxdrzvrcY25",  // 1964 Frank Sinatra, Count Basie - Fly Me To The Moon
+    "smdo": "7GVUmCP00eSsqc4tzj1sDD",  // 1973 Redbone - Come and Get Your Love
+    "bb2o": "7H7NyZ3G075GqPx2evsfeb",  // 2014 Mac DeMarco - Chamber Of Reflection
+    "rrt7": "7I4OmzcINbMoPBCJHBI49Q",  // 2015 Heisenberg & The Albuquerque Kingpins - It's Such a Good Night (From "Breaking Bad")
+    "qv2w": "7MmG8p0F9N3C4AXdK6o6Eb",  // 2014 Calvin Harris, Ellie Goulding - Outside
+    "w7yy": "7bxaFZ1O3cHkgLKMsdC3xR",  // 2025 Tame Impala - Loser
+    "jlio": "7bywjHOc0wSjGGbj04XbVi",  // 2023 Feid, ATL Jacob - LUNA
+    "034n": "7dITAq1YP5e0kTcaDq4YWI",  // 2006 Julieta Venegas - Limón y Sal
+    "7hsc": "7erYBl2eGriXcMhW6KpKT3",  // 2026 Jeff Germita, Aureliø - ILLUSIONARY DAYTIME x DARKTRIAD
+    "d04w": "7fhiGdj0nn0ZCmIAocG8G0",  // 2023 AJR - Maybe Man
+    "51n6": "7hl1REazG2eMQwYLEsMhhz",  // 2025 Ariis - GOZALO
+    "uh44": "7iMwrMRtauAM5EKh4J1Q4i",  // 2012 Martina Stoessel - Te Creo
+    "td98": "7j74lucZ59vqN67Ipe2ZcY",  // 1982 Daryl Hall & John Oates - Maneater
+    "xqiw": "7kUljt0NM5sISL3OGNVxYd",  // 2021 Egzod, Maestro Chives - Royalty
+    "33yg": "7mykoq6R3BArsSpNDjFQTm",  // 2020 Rosa Walton, Hallie Coggins - I Really Want to Stay at Your House
+    "rcrw": "7o7E1nrHWncYY7PY94gCiX",  // 1979 The Buggles - Video Killed The Radio Star
+    "8o5w": "7ogju0HPjo9mwp81ciUPa1",  // 2024 yungatita, Audiotree - 7 Weeks & 3 Days
+    "4ar6": "7tOcPDj3vyopZ404pY6UuP",  // 2009 Bag Raiders - Shooting Stars
+    "5hdc": "7tqhbajSfrz2F7E1Z75ASX",  // 1967 Marvin Gaye, Tammi Terrell - Ain't No Mountain High Enough
+    "qua8": "7wx2StEyXrT2hyWwp1cCmD"  // 2025 DJ LANCE - Bloodline
+  };
 
-        var ID_RE = /^[A-Za-z0-9]{22}$/;
-        var disc = document.getElementById('disc');
-        var face = document.getElementById('face');
-        var hint = document.getElementById('hint');
-        var codeEl = document.getElementById('code');
-        var fallback = document.getElementById('fallback');
-        var stage = document.getElementById('stage');
-        var setup = document.getElementById('setup');
-        var footer = document.getElementById('footer');
+  var ID_RE = /^[A-Za-z0-9]{22}$/;
+  var disc = document.getElementById('disc');
+  var face = document.getElementById('face');
+  var hint = document.getElementById('hint');
+  var codeEl = document.getElementById('code');
+  var fallback = document.getElementById('fallback');
+  var stage = document.getElementById('stage');
+  var setup = document.getElementById('setup');
+  var footer = document.getElementById('footer');
 
-        var params = new URLSearchParams(location.search);
-        var key = params.get('t') || params.get('c') || decodeURIComponent(location.hash.slice(1));
-        var trackId = null;
+  var params = new URLSearchParams(location.search);
+  var key = params.get('t') || params.get('c') || decodeURIComponent(location.hash.slice(1));
+  var trackId = null;
 
-        if (key) {
-            if (CARDS[key]) trackId = CARDS[key];
-            else if (ID_RE.test(key)) trackId = key;
-        }
+  if (key) {
+    if (CARDS[key]) trackId = CARDS[key];
+    else if (ID_RE.test(key)) trackId = key;
+  }
 
-        var secs = 3;
-        try {
-            var saved = localStorage.getItem('hs_countdown');
-            if (saved !== null && !isNaN(parseInt(saved, 10))) secs = parseInt(saved, 10);
-        } catch (e) { }
+  var secs = 3;
+  try {
+    var saved = localStorage.getItem('hs_countdown');
+    if (saved !== null && !isNaN(parseInt(saved, 10))) secs = parseInt(saved, 10);
+  } catch (e) {}
 
-        function paintPills() {
-            var pills = footer.querySelectorAll('.pill');
-            for (var i = 0; i < pills.length; i++) {
-                pills[i].setAttribute('aria-pressed', String(parseInt(pills[i].dataset.sec, 10) === secs));
-            }
-        }
-        footer.addEventListener('click', function (e) {
-            var b = e.target.closest('.pill');
-            if (!b) return;
-            secs = parseInt(b.dataset.sec, 10);
-            try { localStorage.setItem('hs_countdown', String(secs)); } catch (err) { }
-            paintPills();
-        });
-        paintPills();
+  function paintPills() {
+    var pills = footer.querySelectorAll('.pill');
+    for (var i = 0; i < pills.length; i++) {
+      pills[i].setAttribute('aria-pressed', String(parseInt(pills[i].dataset.sec, 10) === secs));
+    }
+  }
+  footer.addEventListener('click', function (e) {
+    var b = e.target.closest('.pill');
+    if (!b) return;
+    secs = parseInt(b.dataset.sec, 10);
+    try { localStorage.setItem('hs_countdown', String(secs)); } catch (err) {}
+    paintPills();
+  });
+  paintPills();
 
-        if (!key) {
-            stage.classList.add('hide');
-            hint.classList.add('hide');
-            footer.classList.add('hide');
-            setup.classList.remove('hide');
-            document.getElementById('example').textContent = location.origin + location.pathname + '?t=TRACKCODE';
-        } else if (!trackId) {
-            codeEl.textContent = key;
-            disc.disabled = true;
-            face.textContent = 'Not found';
-            hint.textContent = 'This card is not in the list yet. Add it and republish the page.';
-            footer.classList.add('hide');
-        } else {
-            codeEl.textContent = key;
-            disc.addEventListener('click', start, { once: true });
-        }
+  if (!key) {
+    stage.classList.add('hide');
+    hint.classList.add('hide');
+    footer.classList.add('hide');
+    setup.classList.remove('hide');
+    document.getElementById('example').textContent = location.origin + location.pathname + '?t=TRACKCODE';
+  } else if (!trackId) {
+    codeEl.textContent = key;
+    disc.disabled = true;
+    face.textContent = 'Not found';
+    hint.textContent = 'This card is not in the list yet. Add it and republish the page.';
+    footer.classList.add('hide');
+  } else {
+    codeEl.textContent = key;
+    disc.addEventListener('click', start, { once: true });
+  }
 
-        function start() {
-            disc.setAttribute('data-spinning', 'true');
-            hint.textContent = 'Phone face down.';
-            if (secs > 0) {
-                face.className = 'face num';
-                var left = secs;
-                face.textContent = String(left);
-                var tick = setInterval(function () {
-                    left--;
-                    if (left <= 0) { clearInterval(tick); launch(); }
-                    else face.textContent = String(left);
-                }, 1000);
-            } else {
-                launch();
-            }
-        }
+  function start() {
+    disc.setAttribute('data-spinning', 'true');
+    hint.textContent = 'Phone face down.';
+    if (secs > 0) {
+      face.className = 'face num';
+      var left = secs;
+      face.textContent = String(left);
+      var tick = setInterval(function () {
+        left--;
+        if (left <= 0) { clearInterval(tick); launch(); }
+        else face.textContent = String(left);
+      }, 1000);
+    } else {
+      launch();
+    }
+  }
 
-        function launch() {
-            face.className = 'face word';
-            face.textContent = 'Playing';
-            var web = 'https://open.spotify.com/track/' + trackId;
-            fallback.href = web;
-            var left = Date.now();
-            window.location.href = 'spotify:track:' + trackId;
-            setTimeout(function () {
-                if (document.hidden || Date.now() - left > 2600) return;
-                face.textContent = '';
-                disc.setAttribute('data-spinning', 'false');
-                stage.querySelector('.disc').classList.add('hide');
-                fallback.classList.add('show');
-                hint.textContent = 'Spotify did not open on its own.';
-            }, 1800);
-        }
-    </script>
+  function launch() {
+    face.className = 'face word';
+    face.textContent = 'Playing';
+    var web = 'https://open.spotify.com/track/' + trackId;
+    fallback.href = web;
+    var left = Date.now();
+    window.location.href = 'spotify:track:' + trackId;
+    setTimeout(function () {
+      if (document.hidden || Date.now() - left > 2600) return;
+      face.textContent = '';
+      disc.setAttribute('data-spinning', 'false');
+      stage.querySelector('.disc').classList.add('hide');
+      fallback.classList.add('show');
+      hint.textContent = 'Spotify did not open on its own.';
+    }, 1800);
+  }
+</script>
 </body>
-
 </html>
